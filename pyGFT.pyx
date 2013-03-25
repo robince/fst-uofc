@@ -55,8 +55,8 @@ def partitions(N):
 			a = gft_1dPartitions((np.max(np.shape(N))))
 	except:
 		a = gft_1dPartitions((np.max(np.shape(N))))
-	arr = np.zeros(n,dtype=np.int)
-	memcpy(<np.int_t*>arr.data,a,sizeof(int)*n)
+	arr = np.zeros(n,dtype=np.int32)
+	memcpy(<np.int32_t*>arr.data,a,sizeof(int)*n)
 	arr = arr.compress(np.where(arr>0,1,0))
 	free(a)
 	return arr

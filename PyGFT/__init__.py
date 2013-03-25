@@ -1,3 +1,4 @@
+#   coding: utf-8
 #	This software is copyright © 2010 UTI Limited Partnership.  
 #	The original authors are Robert A. Brown, M. Louis Lauzon 
 #	and Richard Frayne.  This software is licensed in the terms 

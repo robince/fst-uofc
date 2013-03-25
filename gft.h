@@ -28,3 +28,6 @@ void gft_2dComplex64(double *signal, unsigned int N, unsigned int M, windowFunct
 
 // Interpolation functions
 double *gft_1d_interpolateNN(double *signal, unsigned int N, unsigned int M);
+
+// Shift utility
+void gft_1d_shift(double *signal, unsigned int N, unsigned int shiftBy);

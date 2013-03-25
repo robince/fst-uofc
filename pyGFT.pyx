@@ -107,7 +107,6 @@ def gft2d(image,windowType='gaussian'):
 	ret = shift2D(ret,N/2,M/2)
 	return ret
 
-
 def gft1dInterpolateNN(SIG,M=None):
 	cdef double *image
 	cdef np.ndarray ret
@@ -118,7 +117,6 @@ def gft1dInterpolateNN(SIG,M=None):
 	ret = np.zeros((M,M),ntype)
 	s = shift(SIG.astype(ntype),-N/2)
 	image = gft_1d_interpolateNN(<double*>s.data,N,M)
-	memcpy(<ntype_t*>ret.data,image,M*M*2*sizeof(double))
-	ret = np.reshape(ret,(M,M))
+	memcpy(<double*>ret.data,image,M*M*2*sizeof(double))
 	free(image)
 	return ret

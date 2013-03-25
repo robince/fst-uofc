@@ -415,7 +415,7 @@ double *gft_1d_interpolateNN(double *signal, unsigned int N, unsigned int M) {
 			}
 		}
 	}
-	free(temp);
+	/* free(temp); */
 	return image;
 }
 

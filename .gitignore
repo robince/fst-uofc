@@ -1,3 +1,9 @@
 *.swp
 *.pyc
 *.so
+*DS_Store
+*.swo
+*.o
+*~
+*.mex*
+build

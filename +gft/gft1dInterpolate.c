@@ -63,7 +63,6 @@ void mexFunction(int nlhs, mxArray *plhs[],
     /* perform interpolation */
     unsigned int Nint = Nele;
     unsigned int Mint = m;
-    mexPrintf("N: %d  M: %d m: %d \n", Nint, Mint, 0);
     double *image = gft_1d_interpolateNN(cdata, Nint, 0);
 
     mxArray *out = mxCreateNumericMatrix(m, m, mxDOUBLE_CLASS, mxCOMPLEX);
@@ -74,6 +73,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
     {
         outpr[i] = image[(2*i)];   /* real */
         outpi[i] = image[(2*i)+1]; /* imag */
+        /* debugging problem with NaNs and high values in output */
         if(image[(2*i)]>1000)
             mexPrintf("loop: %d %f ... %f\n",i,image[(2*i)],outpr[i]);
     }

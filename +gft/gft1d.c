@@ -67,7 +67,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
     /* do GFT computation in place */
     gft_1dComplex64(cdata, Nele, win, pars, 1);
     /* shift */
-    gft_1d_shift(cdata, Nele, Nele/2);
+    shift(cdata, Nele, Nele/2);
 
     mxArray *out = mxCreateNumericMatrix(m, n, mxDOUBLE_CLASS, mxCOMPLEX);
     double *outpr = mxGetPr(out);

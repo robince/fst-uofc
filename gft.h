@@ -30,4 +30,4 @@ void gft_2dComplex64(double *signal, unsigned int N, unsigned int M, windowFunct
 double *gft_1d_interpolateNN(double *signal, unsigned int N, unsigned int M);
 
 // Shift utility
-void gft_1d_shift(double *signal, unsigned int N, unsigned int shiftBy);
+void shift(double *sig, int N, int amount);

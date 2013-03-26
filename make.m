@@ -4,9 +4,12 @@
 % for GCC I needed to add -std=c99 to allow C++ style comments
 
 % compile GFT c library
-mex -c gft.c
+% here need -I to point to fftw headers
+mex -c gft.c -I/usr/local/include
 
-% might need to add -I and -L flags to fftw3
+% here need -L to point to fftw3 library
 cd +gft
-mex gft1d.c -I../ ../gft.o -lfftw3
+mex gft1d.c -I../ ../gft.o -lfftw3 -L/usr/local/lib
+mex gft1dInterpolate.c -I../ ../gft.o -lfftw3 -L/usr/local/lib
+mex gft2d.c -I../ ../gft.o -lfftw3 -L/usr/local/lib
 cd ..

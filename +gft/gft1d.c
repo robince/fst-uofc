@@ -58,7 +58,8 @@ void mexFunction(int nlhs, mxArray *plhs[],
      */
     double *cdata;
     cdata = (double *)malloc(Nele*sizeof(double)*2);
-    for(mwSize i=0; i<Nele; i++)
+    mwSize i;
+    for(i=0; i<Nele; i++)
     {
         cdata[(2*i)] = inpr[i]; /* real part */
         cdata[(2*i)+1] = 0.0;   /* imag part */
@@ -72,7 +73,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
     double *outpr = mxGetPr(out);
     double *outpi = mxGetPi(out);
 
-    for(mwSize i=0; i<Nele; i++)
+    for(i=0; i<Nele; i++)
     {
         outpr[i] = cdata[(2*i)];   /* real */
         outpi[i] = cdata[(2*i)+1]; /* imag */

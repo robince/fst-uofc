@@ -351,7 +351,8 @@ double *gft_1d_interpolateNN(double *signal, unsigned int N, unsigned int M) {
 	factor = N / (M+0.0);
 	image = (double *)malloc(M*M*2*sizeof(double));
 
-	for (fstart=1; fstart<N/2; fstart*=2) {
+    fstart = 0;
+    while ( fstart<N/2 ) {
 		if (fstart < 2) {
 			fwidth = 1;
 			fcentre = fstart +1;
@@ -414,6 +415,10 @@ double *gft_1d_interpolateNN(double *signal, unsigned int N, unsigned int M) {
 				image[(M-f-1)*M*2+t*2+1] = image[(M-fstart/factor-1)*M*2+t*2+1];
 			}
 		}
+        if (fstart == 0)
+            fstart = 1;
+        else
+            fstart = 2*fstart;
 	}
 	/* free(temp); */
 	return image;

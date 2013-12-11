@@ -142,6 +142,51 @@ int *gft_1dPartitions(unsigned int N) {
 }
 
 
+int *gft_1dRealPartitions(unsigned int N) {
+	int Npar;
+	int i;
+	int pi;
+	int width;
+	int newpar;
+	int *partitions;
+
+	Npar = round(log2(N/2)); // number of partitions for pos/neg freqs
+	partitions = (int *)malloc(sizeof(int)*(2*Npar+2));
+
+	for (i=0; i<(2*Npar+2); i++) {
+		partitions[i] = 0;
+	}
+
+	// DC
+	partitions[0] = 1;
+	// end marker
+	partitions[2*Npar+1] = -1;
+	// last value
+	partitions[2*Npar] = N;
+
+	// positive freq partitions
+	width = 1;
+	i = 1;
+	for (pi=1; pi<=Npar; pi++) {
+		partitions[i] = partitions[i-1]+width;
+		width *= 2;
+		i++;
+	}
+
+	// negative freq partitions
+	i = 2*Npar-1;
+	for (pi=1; pi<=Npar; pi++) {
+		width = pow(2,pi-1) + 1;
+		newpar = partitions[i+1] - width;
+		if (partitions[i]>0) break; // started wrapping over pos freq partitions
+		else partitions[i] = newpar;
+		i--;
+	}
+
+	return partitions;
+}
+
+
 int *gft_1dMusicPartitions(unsigned int N, float samplerate, int cents) {
 	int i;
 	int *partitions;

@@ -16,6 +16,7 @@ void box(double *win, int N, int freq);
 // GFT partition and window screen generators
 int gft_1dSizeOfPartitions(unsigned int N);
 int *gft_1dPartitions(unsigned int N);
+int *gft_1dRealPartitions(unsigned int N);
 int *gft_1dMusicPartitions(unsigned int N, float samplerate, int cents);
 double *windows(int N, windowFunction *window);
 double *windowsFromPars(int N, windowFunction *window, int *pars);

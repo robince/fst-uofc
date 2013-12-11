@@ -73,6 +73,43 @@ def gaussianWindows(N):
 	free(win)
 	return sig.real
 
+def testrealwins(N):
+	cdef int *p
+	cdef np.ndarray par
+	parlength = 2*np.round(np.log2(N/2))+2
+	par = np.zeros(parlength,dtype=np.int32)
+	p = gft_1dRealPartitions(N)
+	memcpy(<np.int32_t*>par.data, p, sizeof(int)*parlength)
+
+	cdef void *window = &gaussian
+	cdef double *w
+	cdef np.ndarray win
+	win = np.zeros(N,ntype)
+	w = windowsFromPars(N,window,p)
+	memcpy(<ntype_t*>win.data,w,N*2*sizeof(double))
+
+	free(w)
+	free(p)
+
+	return par, win
+
+
+def gft1dreal(sig):
+	sig = sig.astype(ntype)
+	cdef int N = len(sig)
+	cdef void *window
+	cdef int *pars = gft_1dRealPartitions(N)
+	cdef double *win
+	cdef np.ndarray ret = sig.copy()
+
+	window = &gaussian
+	win = windowsFromPars(N,window,pars)
+	gft_1dComplex64(<double *>ret.data, N, win, pars, 1);
+	ret = shift(ret,N/2)
+	free(pars)
+	free(win)
+	return ret
+
 
 def gft1d(sig,windowType='gaussian'):
 	sig = sig.astype(ntype)
@@ -120,3 +157,4 @@ def gft1dInterpolateNN(SIG,M=None):
 	memcpy(<double*>ret.data,image,M*M*2*sizeof(double))
 	free(image)
 	return ret
+

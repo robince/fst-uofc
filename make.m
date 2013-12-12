@@ -12,4 +12,6 @@ cd +gft
 mex gft1d.c -I../ ../gft.o -lfftw3 -L/usr/local/lib
 mex gft1dInterpolate.c -I../ ../gft.o -lfftw3 -L/usr/local/lib
 mex gft2d.c -I../ ../gft.o -lfftw3 -L/usr/local/lib
+mex gft1dReal.c -I../ ../gft.o -lfftw3 -L/usr/local/lib
+mex gft1dRealPartitions.c -I../ ../gft.o -lfftw3 -L/usr/local/lib
 cd ..

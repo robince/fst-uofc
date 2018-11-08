@@ -1,3 +1,9 @@
+
+NOTE: This github repository, github.com/robince/fst-uofc , is a fork of the original project which can be found at: https://sourceforge.net/projects/fst-uofc/
+This repo adds a Matlab wrapper and some small changes, including a modified partitioning scheme for real valued signals. 
+Questions about the core C library and Python wrappers should be directed to the original project on SourceForge. 
+
+
 The General Fourier Family Transform (GFT) Library - Python Module
 
 Note - this document is available in a prettier form, with a GFT example, in README.pdf.  Documentation for the C interface is in README-C.pdf.

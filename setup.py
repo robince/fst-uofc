@@ -1,32 +1,51 @@
-#	This software is copyright (c) 2010 UTI Limited Partnership.
-#	The original authors are Robert A. Brown, M. Louis Lauzon
-#	and Richard Frayne.  This software is licensed in the terms
-#	set forth in the "FST License Notice.txt" file, which is
-#	included in the LICENSE directory of this distribution.
+from __future__ import annotations
+
+import shlex
+import subprocess
+
+from Cython.Build import cythonize
+import numpy as np
+from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext as build_ext_orig
 
 
-from distutils.core import setup
-from distutils.extension import Extension
-import numpy
+def _pkg_config_flags(package: str) -> list[str]:
+    try:
+        output = subprocess.check_output(
+            ["pkg-config", "--cflags", "--libs", package],
+            text=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return []
+    return shlex.split(output)
 
 
-sourcefiles = ['gft.c','pyGFT.c']
+class build_ext(build_ext_orig):
+    def build_extensions(self) -> None:
+        for ext in self.extensions:
+            for flag in _pkg_config_flags("fftw3"):
+                if flag.startswith("-I"):
+                    ext.include_dirs.append(flag[2:])
+                elif flag.startswith("-L"):
+                    ext.library_dirs.append(flag[2:])
+                elif flag.startswith("-l"):
+                    ext.libraries.append(flag[2:])
+                else:
+                    ext.extra_link_args.append(flag)
+        super().build_extensions()
 
-ext_modules = [
-	Extension("gft", sourcefiles,
-						libraries=['fftw3'],
-						include_dirs = ['/usr/local/include']
-						)
-	]
+
+extensions = [
+    Extension(
+        "pygft._core",
+        ["pygft/_core.pyx", "gft.c"],
+        include_dirs=[np.get_include(), "."],
+        libraries=["fftw3"],
+    )
+]
+
 
 setup(
-  name = 'PyGFT',
-	version = "0.1",
-	description="A Python module to calculate the General Fourier Family Transform",
-	author_email="robb@robbtech.com",
-	url='http://www.robbtech.com',
-	include_dirs = [numpy.get_include()],
-	ext_package = 'PyGFT',
-  ext_modules = ext_modules,
-	py_modules = ['PyGFT.examples']
+    ext_modules=cythonize(extensions, compiler_directives={"language_level": "3"}),
+    cmdclass={"build_ext": build_ext},
 )

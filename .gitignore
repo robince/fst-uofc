@@ -7,3 +7,6 @@
 *~
 *.mex*
 build
+.venv
+*.egg-info
+pygft/_core.c

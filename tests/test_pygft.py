@@ -28,6 +28,12 @@ def test_1d_transforms_return_finite_complex_vectors(fn):
     assert np.all(np.isfinite(out))
 
 
+def test_real_transform_accepts_box_window():
+    out = pygft.gft1d_real(np.linspace(0.0, 1.0, 16), window_type="box")
+    assert out.shape == (16,)
+    assert np.all(np.isfinite(out))
+
+
 def test_2d_transform_returns_finite_complex_matrix():
     image = np.arange(64, dtype=float).reshape(8, 8)
     out = pygft.gft2d(image)
@@ -53,6 +59,33 @@ def test_interpolate_nn_uses_frequency_time_layout():
     assert positive_freqs.shape == (16, 32)
     max_time_bin = int(np.argmax(positive_freqs.max(axis=0)))
     assert abs(max_time_bin - 16) <= 2
+
+
+def test_interpolate_real_returns_positive_frequency_time_grid():
+    signal = np.zeros(32, dtype=float)
+    signal[16] = 1.0
+    transform = pygft.gft1d_real(signal)
+    spec = pygft.interpolate_real(transform)
+    assert spec.shape == (16, 32)
+    assert spec.dtype == np.complex128
+    assert np.all(np.isfinite(spec))
+
+
+def test_interpolate_real_rejects_odd_length_input():
+    with pytest.raises(ValueError, match="power of two"):
+        pygft.interpolate_real(np.ones(9, dtype=np.complex128))
+
+
+@pytest.mark.parametrize("size", [1, 2, 6, 12])
+def test_real_partitions_reject_invalid_sizes(size):
+    with pytest.raises(ValueError, match="power of two"):
+        pygft.real_partitions(size)
+
+
+@pytest.mark.parametrize("size", [1, 2, 4, 12])
+def test_complex_partitions_reject_invalid_sizes(size):
+    with pytest.raises(ValueError, match="power of two"):
+        pygft.partitions(size)
 
 
 def test_invalid_window_type_is_rejected():

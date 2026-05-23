@@ -66,8 +66,7 @@ void shift(double *sig, int N, int amount) {
 	memcpy(temp, sig, N*2*sizeof(double));
 	for (i=0; i<N; i++) {
 		j = i - amount;
-		if (j < 0) j = N-j;
-		j = j % N;
+		j = ((j % N) + N) % N;
 		sig[i*2] = temp[j*2];
 		sig[i*2+1] = temp[j*2+1];
 	}
@@ -128,8 +127,9 @@ int *gft_1dPartitions(unsigned int N) {
 		sn = n-cf-width/2+1; en = n-cf+width/2+1;
 		if (ep > n) ep = n;
 		if (sn < 0) sn = 0;
-		if (width/2 == 0)
+		if (width/2 == 0) {
 			ep+=1; sn-=1;
+		}
 		partitions[pcount] = ep;
 		partitions[pOff-pcount] = en;
 		pcount++;
@@ -413,6 +413,7 @@ double *gft_1d_interpolateNN(double *signal, unsigned int N, unsigned int M) {
 	double *fband, *fbandminus;
 	double averageR, averageminusR, averageI, averageminusI;
 	int i, iPrime;
+	int count;
 	int n = (int)N;
 	int m;
 	
@@ -449,13 +450,20 @@ double *gft_1d_interpolateNN(double *signal, unsigned int N, unsigned int M) {
 			if (twidth == 0) {						// Downsample
 				averageR = averageminusR = 0.0;
 				averageI = averageminusI = 0.0;
+				count = 0;
 				for (i=t*downBy-downBy/2; i<t*downBy+downBy/2; i++) {
-					if (i < 0) iPrime = fwidth-i-1;
-					else iPrime = i;
+					iPrime = ((i % fwidth) + fwidth) % fwidth;
 					averageR += fband[iPrime*2];
 					averageI += fband[iPrime*2+1];
 					averageminusR += fbandminus[iPrime*2];
 					averageminusI += fbandminus[iPrime*2+1];
+					count++;
+				}
+				if (count > 0) {
+					averageR /= count;
+					averageI /= count;
+					averageminusR /= count;
+					averageminusI /= count;
 				}
 				image[fstart/factor*M*2+t*2] = averageR;
 				image[fstart/factor*M*2+t*2+1] = averageI;
@@ -472,8 +480,7 @@ double *gft_1d_interpolateNN(double *signal, unsigned int N, unsigned int M) {
 			
 			else {									// Have to interpolate
 				i = (t+twidth/2);
-				if (i >= m) i = i-m;
-				if (i < 0) i = M-i;
+				i = ((i % m) + m) % m;
 				i = i / twidth;
 				image[(fstart/factor)*M*2+t*2] = fband[i*2];
 				image[(fstart/factor)*M*2+t*2+1] = fband[i*2+1];

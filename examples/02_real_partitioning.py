@@ -55,17 +55,16 @@ signal = np.sin(2 * np.pi * freq_hz * x)
 plot_real_vs_complex(signal, "Pure sinusoid: complex vs real-valued GFT")
 plt.show()
 
-# %% Interpolated complex-path spectrogram for visual comparison
-transform = pygft.gft1d(signal, window_type="gaussian")
-spec = pygft.interpolate_nn(transform)
-positive_freqs = spec[: n // 2, :]
+# %% Real-partitioned spectrogram
+transform = pygft.gft1d_real(signal)
+positive_freqs = pygft.interpolate_real(transform)
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 axes[0].imshow(np.abs(positive_freqs), aspect="auto")
-axes[0].set_title("magnitude")
+axes[0].set_title("real-partition magnitude")
 axes[0].set_xlabel("time")
 axes[0].set_ylabel("frequency bin")
 axes[1].imshow(np.angle(positive_freqs), aspect="auto", cmap="twilight")
-axes[1].set_title("phase")
+axes[1].set_title("real-partition phase")
 axes[1].set_xlabel("time")
 plt.show()

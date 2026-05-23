@@ -1,4 +1,9 @@
-"""Interactive examples for the real-valued asymmetric partitioning path."""
+"""Interactive 1D examples using the real-valued asymmetric partitioning path.
+
+Run this file cell-by-cell in VS Code, Jupyter, or any editor that supports
+Python `# %%` cells.  These examples mirror ``01_basic_1d.py`` but use
+``gft1d_real`` plus ``interpolate_real`` for the spectrogram.
+"""
 
 # %%
 import matplotlib.pyplot as plt
@@ -10,27 +15,35 @@ plt.rcParams["image.origin"] = "lower"
 plt.rcParams["figure.constrained_layout.use"] = True
 
 
-def plot_real_vs_complex(signal, title):
+def gaussian_window(n, centre, k):
+    x = np.arange(n) / n
+    win = abs(k) / np.sqrt(2 * np.pi) * np.exp(-((x - 0.5) ** 2) * abs(k) ** 2 / 2)
+    win = win / (np.sum(win) / n)
+    return np.roll(np.roll(win, -n // 2), int(centre))
+
+
+def plot_real_transform(signal, title, window_type="gaussian"):
     n = signal.size
-    complex_gft = pygft.gft1d(signal, window_type="gaussian")
-    real_gft = pygft.gft1d_real(signal)
+    x = np.arange(n) / n
+    transform = pygft.gft1d_real(signal, window_type=window_type)
+    pars = pygft.real_partitions(n)
 
-    fig, axes = plt.subplots(3, 1, figsize=(10, 8))
+    fig, axes = plt.subplots(3, 1, figsize=(10, 7), sharex=False)
     fig.suptitle(title)
+    axes[0].plot(x, signal, label="real")
+    axes[0].set_title("signal")
+    axes[0].legend(loc="upper right")
 
-    axes[0].plot(signal)
-    axes[0].set_title("real input signal")
+    axes[1].plot(np.abs(transform))
+    axes[1].set_title(f"|gft1d_real(signal, {window_type!r})|")
+    for p in pars:
+        axes[1].axvline((n // 2 + p) % n, color="tab:red", alpha=0.18)
 
-    axes[1].plot(np.abs(complex_gft), label="gft1d")
-    axes[1].plot(np.abs(real_gft), "--", label="gft1d_real")
-    axes[1].set_title("transform magnitudes")
-    axes[1].legend(loc="upper right")
-
-    real_pars = pygft.real_partitions(n)
-    axes[2].plot(np.abs(real_gft))
-    axes[2].set_title("real-valued asymmetric partitions")
-    for p in real_pars:
-        axes[2].axvline((n // 2 + p) % n, color="tab:red", alpha=0.25)
+    spec = pygft.interpolate_real(transform)
+    axes[2].imshow(np.abs(spec), aspect="auto")
+    axes[2].set_title("real-partition nearest-neighbor spectrogram")
+    axes[2].set_xlabel("time")
+    axes[2].set_ylabel("frequency bin")
     return fig
 
 
@@ -38,33 +51,60 @@ def plot_real_vs_complex(signal, title):
 for n in (8, 16, 32, 64):
     print(f"N={n}: {pygft.real_partitions(n).tolist()}")
 
-# %% Delta impulse using the real-valued transform path
+# %% Delta impulse, Gaussian and box windows
 n = 256
 signal = np.zeros(n)
 signal[n // 2] = 1.0
 
-plot_real_vs_complex(signal, "Delta impulse: complex vs real-valued GFT")
+plot_real_transform(signal, "Delta impulse: real Gaussian window", "gaussian")
+plot_real_transform(signal, "Delta impulse: real Box window", "box")
 plt.show()
 
-# %% Pure sinusoid similar to test_st.m
-freq_hz = 6
-n = 512
-x = np.linspace(0, 2, n)
-signal = np.sin(2 * np.pi * freq_hz * x)
+# %% Two impulses
+signal = np.zeros(n)
+signal[n // 4] = 1.0
+signal[n // 4 + n // 2] = 1.0
 
-plot_real_vs_complex(signal, "Pure sinusoid: complex vs real-valued GFT")
+plot_real_transform(signal, "Two impulses: real Gaussian window", "gaussian")
+plot_real_transform(signal, "Two impulses: real Box window", "box")
 plt.show()
 
-# %% Real-partitioned spectrogram
-transform = pygft.gft1d_real(signal)
-positive_freqs = pygft.interpolate_real(transform)
+# %% Gaussian-windowed sinusoid packets
+x = np.arange(n) / n
+signal = (
+    np.sin(2 * np.pi * 24 * x) * gaussian_window(n, n // 4, 8)
+    + np.sin(2 * np.pi * 96 * x) * gaussian_window(n, 3 * n // 4, 8)
+    + np.sin(2 * np.pi * 80 * x) * gaussian_window(n, 3 * n // 4, 8)
+)
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-axes[0].imshow(np.abs(positive_freqs), aspect="auto")
-axes[0].set_title("real-partition magnitude")
-axes[0].set_xlabel("time")
-axes[0].set_ylabel("frequency bin")
-axes[1].imshow(np.angle(positive_freqs), aspect="auto", cmap="twilight")
-axes[1].set_title("real-partition phase")
-axes[1].set_xlabel("time")
+plot_real_transform(signal, "Three localized sine packets: real Gaussian window", "gaussian")
+plot_real_transform(signal, "Three localized sine packets: real Box window", "box")
+plt.show()
+
+# %% Chirp-like increasing-frequency sine
+signal = np.sin(2 * np.pi * x * x * n / 4)
+
+plot_real_transform(signal, "Increasing-frequency sine: real Gaussian window", "gaussian")
+plot_real_transform(signal, "Increasing-frequency sine: real Box window", "box")
+plt.show()
+
+# %% Linear chirp with a known start and end frequency
+duration = 1.0
+start_hz = 8.0
+end_hz = 96.0
+t = np.arange(n) / n * duration
+chirp_rate = (end_hz - start_hz) / duration
+phase = 2 * np.pi * (start_hz * t + 0.5 * chirp_rate * t**2)
+signal = np.sin(phase)
+
+fig = plot_real_transform(signal, "Linear chirp: real 8 Hz to 96 Hz", "gaussian")
+fig.axes[0].set_xlabel("time (s)")
+fig.axes[2].plot(
+    np.arange(n),
+    start_hz + chirp_rate * t,
+    color="white",
+    linewidth=1.2,
+    alpha=0.85,
+)
+fig.axes[2].set_ylim(0, n // 2)
 plt.show()

@@ -1,4 +1,4 @@
-% function spec = gft1dRealInterpolate(g)
+%function spec = gft1dRealInterpolate(g)
 % Produce interpolated spectrogram from 
 % real-partitioned GFT
 
@@ -66,14 +66,14 @@ set(gca,'YDir','normal')
 colorbar
 
 %%
-% TSI = TriScatteredInterp(F',T',Z','nearest');
-% [X Y] = meshgrid(1:(N/2), 1:N);
-% spec = TSI(X,Y);
-% 
-% figure
-% imagesc(abs(spec)')
-% set(gca,'YDir','normal')
-% colorbar
+TSI = TriScatteredInterp(F',T',Z','nearest');
+[X Y] = meshgrid(1:(N/2), 1:N);
+spec = TSI(X,Y);
+
+figure
+imagesc(abs(spec)')
+set(gca,'YDir','normal')
+colorbar
 
 %%
 st = gft.gft1d(y,'gaussian');

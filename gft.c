@@ -62,11 +62,11 @@ void shift(double *sig, int N, int amount) {
 	int i,j;
 	
 	temp = (double *) malloc(N*2*sizeof(double));
+	if (temp == NULL) return;
 	memcpy(temp, sig, N*2*sizeof(double));
 	for (i=0; i<N; i++) {
 		j = i - amount;
-		if (j < 0) j = N-j;
-		j = j % N;
+		j = ((j % N) + N) % N;
 		sig[i*2] = temp[j*2];
 		sig[i*2+1] = temp[j*2+1];
 	}
@@ -77,7 +77,7 @@ void shift(double *sig, int N, int amount) {
 void gaussian(double *win, int N, int freq) {
 	int i;
 	double x;
-	double sum;
+	double sum = 0.0;
 	for (i = 0; i<N*2; i+=2) {
 		x = i / (N*2+0.0);
 		win[i] = abs(freq)/sqrt(2*PI)*exp(-pow((x-0.5),2)*pow(freq,2)/2.0);
@@ -95,6 +95,7 @@ void gaussian(double *win, int N, int freq) {
 
 void box(double *win, int N, int freq) {
 	int i;
+	(void)freq;
 	for (i = 0; i < N*2; i+=2) {
 		win[i] = 1.0;
 		win[i+1] = 0.0;
@@ -109,31 +110,32 @@ int gft_1dSizeOfPartitions(unsigned int N) {
 
 int *gft_1dPartitions(unsigned int N) {
 	int sf = 1;
-	int ef = 2;
 	int cf = 1;
 	int width = 1;
 	int pcount = 0;
 	int pOff;
 	int *partitions;
-	int sp,ep,sn,en;
+	int ep,sn,en;
+	int n = (int)N;
 	
-	partitions = (int *)malloc(sizeof(int)*round(log2(N))*2+1);
+	partitions = (int *)malloc(sizeof(int)*(round(log2(N))*2+1));
+	if (partitions == NULL) return NULL;
 	pOff = round(log2(N))*2-1;
 	
-	while (sf < N/2) {
-		sp = cf-width/2-1; ep = cf+width/2-1;
-		sn = N-cf-width/2+1; en = N-cf+width/2+1;
-		if (ep > N) ep = N;
+	while (sf < n/2) {
+		ep = cf+width/2-1;
+		sn = n-cf-width/2+1; en = n-cf+width/2+1;
+		if (ep > n) ep = n;
 		if (sn < 0) sn = 0;
-		if (width/2 == 0)
+		if (width/2 == 0) {
 			ep+=1; sn-=1;
+		}
 		partitions[pcount] = ep;
 		partitions[pOff-pcount] = en;
 		pcount++;
 		
 		sf = sf+width;
 		if (sf > 2) width *= 2;
-		ef = sf+width;
 		cf = sf+width/2;
 	}
 	
@@ -152,6 +154,7 @@ int *gft_1dRealPartitions(unsigned int N) {
 
 	Npar = round(log2(N/2)); // number of partitions for pos/neg freqs
 	partitions = (int *)malloc(sizeof(int)*(2*Npar+2));
+	if (partitions == NULL) return NULL;
 
 	for (i=0; i<(2*Npar+2); i++) {
 		partitions[i] = 0;
@@ -204,6 +207,7 @@ int *gft_1dMusicPartitions(unsigned int N, float samplerate, int cents) {
 	}
 	
 	partitions = (int *) malloc(sizeof(int)*(floor((max-min)/logdelta+2))*2);
+	if (partitions == NULL) return NULL;
 	int poff = floor((max-min)/logdelta+2)*2-1;
 	for (i = 0; i < (max-min) / logdelta + 1; i++) {
 		freq = (min-logdelta/2.) + logdelta*i;
@@ -217,13 +221,18 @@ int *gft_1dMusicPartitions(unsigned int N, float samplerate, int cents) {
 
 
 double *windows(int N, windowFunction *window){
-	int fstart, fcentre, fwidth, fend;
+	int fstart, fcentre, fwidth;
 	double *fband, *fbandminus;
 	double *win, *temp;
 	int i;
 	
 	win = (double *)malloc((N)*sizeof(double)*2);
 	temp = (double *)malloc((N)*sizeof(double)*2);
+	if (win == NULL || temp == NULL) {
+		free(win);
+		free(temp);
+		return NULL;
+	}
 	memset(win, 0, N*sizeof(double)*2);
 	
 	// For each of the GFT frequency bands.  Using a dyadic scale.
@@ -236,11 +245,9 @@ double *windows(int N, windowFunction *window){
 		if (fstart < 2) {
 			fwidth = 1;
 			fcentre = fstart +1;
-			fend = fstart+fwidth;
 		} else {
 			fwidth = fstart;
 			fcentre = fstart + fwidth/2 +1;
-			fend = fstart + fwidth;
 		}
 		
 		// frequency band that we're working with
@@ -273,6 +280,11 @@ double *windowsFromPars(int N, windowFunction *window, int *pars){
 	
 	win = (double *)malloc((N)*sizeof(double)*2);
 	temp = (double *)malloc((N)*sizeof(double)*2);
+	if (win == NULL || temp == NULL) {
+		free(win);
+		free(temp);
+		return NULL;
+	}
 	memset(win, 0, N*sizeof(double)*2);
 	
 	// For each of the GFT frequency bands.  Using a dyadic scale.
@@ -321,7 +333,7 @@ double *windowsFromPars(int N, windowFunction *window, int *pars){
 void gft_1dComplex64(double *signal, unsigned int N, double *win, int *pars, int stride) {
 	int fstart, fend, fcount;
 	double *fband;
-	int i;
+	unsigned int i;
 	
 	// Do the initial FFT of the signal
 	fft(N, signal, stride);
@@ -345,28 +357,43 @@ void gft_1dComplex64(double *signal, unsigned int N, double *win, int *pars, int
 
 
 void gft_2dComplex64(double *image, unsigned int N, unsigned int M, windowFunction *window) {
-	int row, col;
+	unsigned int row, col;
 	double *win;
 	int *pars;
 	pars = gft_1dPartitions(N);
 	win = windows(N, window);
+	if (pars == NULL || win == NULL) {
+		free(pars);
+		free(win);
+		return;
+	}
 	for (row=0; row < N; row++) {
 		gft_1dComplex64(image+(row*N*2),N,win,pars,1);
 	}
+	free(pars);
+	free(win);
 	pars = gft_1dPartitions(M);
 	win = windows(M, window);
+	if (pars == NULL || win == NULL) {
+		free(pars);
+		free(win);
+		return;
+	}
 	for (col=0; col < M; col++) {
 		gft_1dComplex64(image+(col*2),M,win,pars,N);
 	}
+	free(pars);
+	free(win);
 	
 }
 
 
 void gft_1d_shift(double *signal, unsigned int N, unsigned int shiftBy) {
 	double *temp;
-	int i,shiftTo;
+	unsigned int i,shiftTo;
 	
 	temp = (double *)malloc(N*2*sizeof(double));
+	if (temp == NULL) return;
 	memcpy(temp,signal,N*2*sizeof(double));
 	for (i = 0; i < N; i++) {
 		shiftTo = i+shiftBy;
@@ -379,13 +406,16 @@ void gft_1d_shift(double *signal, unsigned int N, unsigned int shiftBy) {
 
 
 double *gft_1d_interpolateNN(double *signal, unsigned int N, unsigned int M) {
-	double *image,*temp;
+	double *image;
 	int factor;
 	int f, t;
-	int fstart, fwidth, fcentre, fend, twidth, downBy;
+	int fstart, fwidth, fend, twidth, downBy;
 	double *fband, *fbandminus;
 	double averageR, averageminusR, averageI, averageminusI;
 	int i, iPrime;
+	int count;
+	int n = (int)N;
+	int m;
 	
 /*	temp = (double *)malloc(N*2*sizeof(double));
 	memcpy(temp,signal,N*2*sizeof(double));
@@ -393,18 +423,19 @@ double *gft_1d_interpolateNN(double *signal, unsigned int N, unsigned int M) {
 	signal = temp; */
 	
 	if (M == 0) M = N;
+	m = (int)M;
 	factor = N / (M+0.0);
 	image = (double *)malloc(M*M*2*sizeof(double));
+	if (image == NULL) return NULL;
+	memset(image, 0, M*M*2*sizeof(double));
 
 	fstart = 0;
-	while ( fstart<N/2 ) {
+	while ( fstart<n/2 ) {
 		if (fstart < 2) {
 			fwidth = 1;
-			fcentre = fstart +1;
 			fend = fstart+fwidth;
 		} else {
 			fwidth = fstart;
-			fcentre = fstart + fwidth/2 +1;
 			fend = fstart + fwidth;
 		}
 		
@@ -415,17 +446,24 @@ double *gft_1d_interpolateNN(double *signal, unsigned int N, unsigned int M) {
 		twidth = M / fwidth;
 		downBy = fwidth / M;
 			
-		for (t=0; t<M; t++) {
+		for (t=0; t<m; t++) {
 			if (twidth == 0) {						// Downsample
 				averageR = averageminusR = 0.0;
 				averageI = averageminusI = 0.0;
+				count = 0;
 				for (i=t*downBy-downBy/2; i<t*downBy+downBy/2; i++) {
-					if (i < 0) iPrime = fwidth-i-1;
-					else iPrime = i;
+					iPrime = ((i % fwidth) + fwidth) % fwidth;
 					averageR += fband[iPrime*2];
 					averageI += fband[iPrime*2+1];
 					averageminusR += fbandminus[iPrime*2];
 					averageminusI += fbandminus[iPrime*2+1];
+					count++;
+				}
+				if (count > 0) {
+					averageR /= count;
+					averageI /= count;
+					averageminusR /= count;
+					averageminusI /= count;
 				}
 				image[fstart/factor*M*2+t*2] = averageR;
 				image[fstart/factor*M*2+t*2+1] = averageI;
@@ -442,8 +480,7 @@ double *gft_1d_interpolateNN(double *signal, unsigned int N, unsigned int M) {
 			
 			else {									// Have to interpolate
 				i = (t+twidth/2);
-				if (i >= M) i = i-M;
-				if (i < 0) i = M-i;
+				i = ((i % m) + m) % m;
 				i = i / twidth;
 				image[(fstart/factor)*M*2+t*2] = fband[i*2];
 				image[(fstart/factor)*M*2+t*2+1] = fband[i*2+1];
@@ -468,4 +505,3 @@ double *gft_1d_interpolateNN(double *signal, unsigned int N, unsigned int M) {
 	/* free(temp); */
 	return image;
 }
-
